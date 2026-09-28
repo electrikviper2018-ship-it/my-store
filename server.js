@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import Stripe from 'stripe';
+import fs from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 const {
   PRINTIFY_TOKEN, PRINTIFY_SHOP_ID, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
@@ -16,6 +18,14 @@ async function getShopId() {
 
 const stripe = new Stripe(STRIPE_SECRET_KEY);
 const app = express();
+app.set('trust proxy', 1);
+
+const pub = fileURLToPath(new URL('./public/', import.meta.url));
+// Public site address: SITE_URL if set, otherwise whatever address the visitor used.
+const base = (req) =>
+  SITE_URL && !SITE_URL.includes('localhost') ? SITE_URL.replace(/\/$/, '') : `${req.protocol}://${req.get('host')}`;
+const page = async (file, req) => (await fs.readFile(pub + file, 'utf8')).replaceAll('{{SITE_URL}}', base(req));
+const LEGAL = ['privacy', 'terms', 'refunds', 'cookies'];
 
 // Printify helper: the token stays on the server and is never sent to the browser.
 async function printify(path, options = {}) {
@@ -101,6 +111,38 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 });
 
 app.use(express.json());
+const send = (file) => async (req, res, next) => {
+  try { res.type('html').send(await page(file(req), req)); } catch (err) { next(err); }
+};
+app.get(['/', '/index.html'], send(() => 'index.html'));
+app.get(/^\/(privacy|terms|refunds|cookies)\.html$/, send((req) => `${req.params[0]}.html`));
+
+app.get('/sitemap.xml', (req, res) => {
+  const urls = ['/', ...LEGAL.map((p) => `/${p}.html`)];
+  res.type('application/xml').send(
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
+      .map((u) => `  <url><loc>${base(req)}${u}</loc></url>`).join('\n')}\n</urlset>\n`);
+});
+app.get('/robots.txt', (req, res) =>
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${base(req)}/sitemap.xml\n`));
+app.get('/llms.txt', (req, res) => {
+  const b = base(req);
+  res.type('text/plain').send(`# FERMO
+
+> FERMO sells phone cases that are printed to order and shipped to the customer's door.
+
+## Pages
+- [Store](${b}/): browse phone cases, choose a model and check out securely
+- [Refund Policy](${b}/refunds.html): what happens with damaged, defective or late orders
+- [Terms and Conditions](${b}/terms.html)
+- [Privacy Policy](${b}/privacy.html)
+- [Cookie Policy](${b}/cookies.html)
+
+## Contact
+- Email: fermocases.shop@gmail.com
+`);
+});
+
 app.use(express.static('public'));
 
 app.get('/api/products', async (_req, res) => {
@@ -109,16 +151,6 @@ app.get('/api/products', async (_req, res) => {
   } catch (err) {
     console.error(err);
     res.status(502).json({ error: 'Could not load products.' });
-  }
-});
-
-// Lists the stores on your Printify account (IDs and names only) to help with setup.
-app.get('/api/shops', async (_req, res) => {
-  try {
-    const shops = await printify('/shops.json');
-    res.json({ using: await getShopId(), shops: shops.map((x) => ({ id: x.id, title: x.title, channel: x.sales_channel })) });
-  } catch (err) {
-    res.status(502).json({ error: 'Could not load stores.' });
   }
 });
 
@@ -150,8 +182,8 @@ app.post('/api/checkout', async (req, res) => {
       phone_number_collection: { enabled: true },
       // Stripe metadata is limited to 500 characters per value, which fits small carts.
       metadata: { cart: JSON.stringify(cart.map((i) => ({ p: i.productId, v: i.variantId, q: i.quantity }))) },
-      success_url: `${SITE_URL}/?order=success`,
-      cancel_url: `${SITE_URL}/`,
+      success_url: `${base(req)}/?order=success`,
+      cancel_url: `${base(req)}/`,
     });
     res.json({ url: session.url });
   } catch (err) {
@@ -159,5 +191,11 @@ app.post('/api/checkout', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
+app.use(async (req, res) => {
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found.' });
+  try { res.status(404).type('html').send(await page('404.html', req)); } catch { res.status(404).send('Page not found'); }
+});
+app.use((err, _req, res, _next) => { console.error(err); res.status(500).send('Something went wrong. Please try again.'); });
 
 app.listen(PORT, () => console.log(`Store running at ${SITE_URL}`));
