@@ -53,16 +53,12 @@ a{color:var(--accent)}
 footer p{margin:.3rem 0}footer nav{display:flex;flex-wrap:wrap;gap:1rem;margin:.8rem 0}
 .reveal-ready .item,.reveal-ready .steps li{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease;transition-delay:var(--d,0ms)}
 .reveal-ready .item.in,.reveal-ready .steps li.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.reveal-ready .item,.reveal-ready .steps li{opacity:1;transform:none;transition:none}.track{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.reveal-ready .item,.reveal-ready .steps li{opacity:1;transform:none;transition:none}}
 #progress{position:fixed;top:0;left:0;height:3px;width:100%;background:var(--accent);transform-origin:0 50%;transform:scaleX(var(--s,0));z-index:9}
 #glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(520px circle at var(--x,50%) var(--y,25%),rgba(168,107,255,.14),transparent 60%)}
 header,main,footer,.ticker,.steps{position:relative;z-index:1}
 .hero{position:relative;isolation:isolate;z-index:1}
 #art{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
-.ticker{overflow:hidden;border-block:1px solid var(--line);padding:.8rem 0;margin-bottom:2rem}
-.track{display:flex;width:max-content;animation:slide 30s linear infinite}
-.track span{font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(1.6rem,4vw,2.6rem);padding-right:2rem;white-space:nowrap}
-@keyframes slide{to{transform:translateX(-50%)}}
 .item img{transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .2s ease}
 .steps{padding:3rem clamp(1rem,4vw,3rem) 4rem;border-top:1px solid var(--line)}
 .steps h2{font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:clamp(2.2rem,7vw,5rem);line-height:.95;margin:0 0 2rem}
@@ -94,7 +90,6 @@ header,main,footer,.ticker,.steps{position:relative;z-index:1}
     <p>Printed to order and shipped to your door.</p>
   </div>
 </section>
-<div class="ticker" aria-hidden="true"><div class="track"><span>Printed to order +</span><span>Shipped to your door +</span><span>Built to hold +</span></div></div>
 <main id="grid" aria-live="polite"><p>Loading cases…</p></main>
 <section class="steps">
   <h2>From your screen to your hand.</h2>
@@ -125,6 +120,7 @@ header,main,footer,.ticker,.steps{position:relative;z-index:1}
 
 <script>
 const $ = (id) => document.getElementById(id);
+const short = (t) => t.replace(/iPhone\s+/gi, '');
 const money = (c) => `$${(c / 100).toFixed(2)}`;
 let products = [];
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -148,7 +144,7 @@ function renderProducts() {
       <h3>${esc(p.title)}</h3>
       <div class="row">
         <select aria-label="Options for ${esc(p.title)}">
-          ${p.variants.map((v) => `<option value="${v.id}">${esc(v.title)} · ${money(v.price)}</option>`).join('')}
+          ${p.variants.map((v) => `<option value="${v.id}">${esc(short(v.title))} · ${money(v.price)}</option>`).join('')}
         </select>
         <button class="btn" aria-label="Add to cart: ${esc(p.title)}">Add to cart</button>
       </div>`;
@@ -183,7 +179,7 @@ function renderCart() {
     total += v.price * i.quantity;
     const el = document.createElement('div');
     el.className = 'line';
-    el.innerHTML = `<div>${esc(p.title)}<small>${esc(v.title)} · ${money(v.price)}</small></div>
+    el.innerHTML = `<div>${esc(p.title)}<small>${esc(short(v.title))} · ${money(v.price)}</small></div>
       <div class="row" style="align-items:center"><button class="link" aria-label="Remove one">−</button>${i.quantity}<button class="link" aria-label="Add one">+</button></div>`;
     const [minus, plus] = el.querySelectorAll('button');
     minus.onclick = () => { i.quantity--; renderCart(); };
@@ -278,7 +274,6 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
   new IntersectionObserver(([e]) => { const was = running; running = e.isIntersecting; if (running && !was) loop(); }).observe(hero);
   loop();
 })();
-document.querySelector('.track').innerHTML += document.querySelector('.track').innerHTML;
 
 fetch('/api/products')
   .then((r) => (r.ok ? r.json() : Promise.reject()))
