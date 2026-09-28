@@ -1,9 +1,9 @@
 // EDIT THIS ONE FILE: your business details appear on every page and policy.
 window.BIZ = {
-  legalName: '[YOUR LEGAL BUSINESS NAME]',
-  address: '[YOUR MAILING ADDRESS]',
-  email: '[YOUR SUPPORT EMAIL]',
-  county: '[YOUR COUNTY]',
+  legalName: 'Breckin Copeland (doing business as FERMO)',
+  address: '509 Jill Dr, Jonesboro, AR, United States',
+  email: 'electrikviper2018@gmail.com',
+  county: 'Craighead',
   state: 'Arkansas',
   updated: 'September 28, 2026',
 };
