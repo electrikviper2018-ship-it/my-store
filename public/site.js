@@ -2,7 +2,7 @@
 window.BIZ = {
   legalName: 'Breckin Copeland (doing business as FERMO)',
   address: '509 Jill Dr, Jonesboro, AR, United States',
-  email: 'electrikviper2018@gmail.com',
+  email: 'fermocases.shop@gmail.com',
   county: 'Craighead',
   state: 'Arkansas',
   updated: 'September 28, 2026',
