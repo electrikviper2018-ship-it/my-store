@@ -3,62 +3,86 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Print Shop</title>
+<meta name="description" content="FERMO phone cases, printed to order.">
+<title>FERMO | Phone cases</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#14213d;--paper:#f3f5f9;--card:#fff;--accent:#ff5a1f;--line:#d5dae5;--muted:#5b6478}
-@media (prefers-color-scheme:dark){:root{--ink:#eef1f8;--paper:#0f1626;--card:#18223a;--line:#2a3654;--muted:#9aa5bf}}
+:root{--base:#0e0c13;--surface:#17141f;--line:#2b2536;--text:#efeaf7;--muted:#9a92ad;--accent:#a86bff}
 *{box-sizing:border-box}
-body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.5}
-header{display:flex;justify-content:space-between;align-items:center;padding:1rem clamp(1rem,4vw,3rem);border-bottom:2px solid var(--ink)}
-h1{margin:0;font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+body{margin:0;background:var(--base);color:var(--text);font-family:'Instrument Sans',system-ui,sans-serif;line-height:1.5}
 button{font:inherit;cursor:pointer}
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.btn{background:var(--accent);color:#fff;border:0;padding:.65rem 1.1rem;font-weight:600;border-radius:6px}
-.btn:disabled{opacity:.5;cursor:default}
-.link{background:none;border:0;color:var(--ink);font-weight:600;padding:.5rem}
-.hero{padding:clamp(2rem,8vw,6rem) clamp(1rem,4vw,3rem) 2rem;max-width:60rem}
-.hero h2{font-size:clamp(2.4rem,9vw,6rem);line-height:.95;letter-spacing:-.04em;font-weight:800;margin:0 0 1rem}
-.hero p{color:var(--muted);max-width:40ch;margin:0}
-#banner{background:var(--accent);color:#fff;padding:.7rem clamp(1rem,4vw,3rem);font-weight:600}
-main{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1.5rem;padding:1rem clamp(1rem,4vw,3rem) 4rem}
-.item{display:flex;flex-direction:column;gap:.6rem}
-.item img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--card);border:1px solid var(--line);border-radius:4px}
-.item h3{margin:0;font-size:1.05rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+header{display:flex;justify-content:space-between;align-items:center;padding:1rem clamp(1rem,4vw,3rem)}
+.logo{font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:1.6rem;letter-spacing:.04em}
+.cartbtn{background:none;border:1px solid var(--line);color:var(--text);padding:.5rem 1rem;border-radius:999px;font-weight:600}
+.cartbtn:hover{border-color:var(--accent)}
+#banner{background:var(--accent);color:var(--base);padding:.7rem clamp(1rem,4vw,3rem);font-weight:600}
+.hero{padding:clamp(1rem,4vw,3rem) clamp(1rem,4vw,3rem) 2.5rem;overflow:hidden}
+.mark{font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:clamp(5rem,29vw,26rem);line-height:.8;letter-spacing:-.02em;margin:0 0 1.5rem -.03em;color:transparent;-webkit-text-stroke:2px var(--text);text-shadow:0 0 60px rgba(168,107,255,.35)}
+.hero-copy{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem;border-top:1px solid var(--line);padding-top:1.25rem}
+.hero-copy h2{margin:0;font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(1.8rem,4vw,3rem);line-height:1}
+.hero-copy p{margin:0;color:var(--muted);max-width:36ch}
+main{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem;padding:1rem clamp(1rem,4vw,3rem) 4rem}
+.item{background:var(--surface);border:1px solid var(--line);padding:1rem;display:flex;flex-direction:column;gap:.7rem;border-radius:4px}
+.item:hover{border-color:var(--accent)}
+.item img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--base);border-radius:2px}
+.item h3{margin:0;font-size:1rem;font-weight:600}
 .row{display:flex;gap:.5rem}
-select{flex:1;font:inherit;padding:.55rem;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
-.price{font-weight:800}
-aside{position:fixed;top:0;right:0;height:100%;width:min(24rem,100%);background:var(--card);border-left:2px solid var(--ink);padding:1.25rem;display:flex;flex-direction:column;gap:1rem;transform:translateX(100%);transition:transform .2s}
+select{flex:1;min-width:0;font:inherit;padding:.6rem;border:1px solid var(--line);border-radius:4px;background:var(--base);color:var(--text)}
+.btn{background:var(--accent);color:var(--base);border:0;padding:.65rem 1rem;font-weight:600;border-radius:4px}
+.btn:hover{filter:brightness(1.12)}
+.btn:disabled{opacity:.4;cursor:default}
+.link{background:none;border:0;color:var(--text);font-weight:600;padding:.4rem .6rem}
+aside{position:fixed;top:0;right:0;height:100%;width:min(25rem,100%);background:var(--surface);border-left:1px solid var(--accent);padding:1.25rem;display:flex;flex-direction:column;gap:1rem;transform:translateX(100%);transition:transform .2s;z-index:5}
 aside.open{transform:none}
-aside h2{margin:0}
+aside h2{margin:0;font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:1.8rem}
 #lines{flex:1;overflow:auto;display:flex;flex-direction:column;gap:.8rem}
-.line{display:flex;justify-content:space-between;gap:1rem;border-bottom:1px solid var(--line);padding-bottom:.6rem}
+.line{display:flex;justify-content:space-between;gap:1rem;border-bottom:1px solid var(--line);padding-bottom:.7rem}
 .line small{color:var(--muted);display:block}
-#msg{color:var(--accent);min-height:1.2em;margin:0}
+.total{font-weight:600;margin:0}
+.note{margin:0;color:var(--muted);font-size:.9rem}
+#msg{color:#ff8a8a;min-height:1.2em;margin:0}
+footer{border-top:1px solid var(--line);padding:1.5rem clamp(1rem,4vw,3rem);color:var(--muted);font-size:.9rem}
 @media (prefers-reduced-motion:reduce){aside{transition:none}}
+.skip{position:absolute;left:-999px}.skip:focus{left:1rem;top:1rem;background:var(--accent);color:var(--base);padding:.5rem 1rem;z-index:10}
+a{color:var(--accent)}
+.agree{display:flex;gap:.6rem;font-size:.9rem;color:var(--muted);align-items:flex-start}
+.agree input{width:1.2rem;height:1.2rem;accent-color:var(--accent);flex:none;margin-top:.15rem}
+footer p{margin:.3rem 0}footer nav{display:flex;flex-wrap:wrap;gap:1rem;margin:.8rem 0}
 </style>
 </head>
 <body>
+<a class="skip" href="#grid">Skip to products</a>
 <header>
-  <h1>Print Shop</h1>
-  <button class="link" id="open-cart">Cart (<span id="count">0</span>)</button>
+  <div class="logo">FERMO</div>
+  <button class="cartbtn" id="open-cart">Cart (<span id="count">0</span>)</button>
 </header>
-<div id="banner" hidden>Thanks for your order. A confirmation email is on its way.</div>
+<div id="banner" hidden>Order placed. A confirmation email is on its way.</div>
 <section class="hero">
-  <h2>Made when you order it.</h2>
-  <p>Every item is printed on demand and shipped straight to your door.</p>
+  <h1 class="mark" aria-label="FERMO">FERMO</h1>
+  <div class="hero-copy">
+    <h2>Cases that hold on.</h2>
+    <p>Printed to order and shipped to your door.</p>
+  </div>
 </section>
-<main id="grid" aria-live="polite"><p>Loading products…</p></main>
+<main id="grid" aria-live="polite"><p>Loading cases…</p></main>
+<footer>
+  <p><strong data-biz="legalName">FERMO</strong> · <span data-biz="address"></span></p>
+  <p>Questions? <a data-mail href="#"><span data-biz="email"></span></a></p>
+  <nav aria-label="Legal"><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms and Conditions</a><a href="/refunds.html">Refund Policy</a><a href="/cookies.html">Cookie Policy</a></nav>
+  <p>iPhone and MagSafe are trademarks of Apple Inc. FERMO is not affiliated with or endorsed by Apple.</p>
+</footer>
+<script src="/site.js"></script>
 
-<aside id="cart" aria-label="Shopping cart">
+<aside id="cart" role="dialog" aria-label="Shopping cart" inert>
   <div class="row" style="justify-content:space-between;align-items:center">
     <h2>Your cart</h2><button class="link" id="close-cart">Close</button>
   </div>
   <div id="lines"></div>
-  <p class="price">Subtotal: <span id="total">$0.00</span></p>
-  <p style="margin:0;color:var(--muted);font-size:.9rem">Shipping is calculated at checkout.</p>
+  <p class="total">Subtotal: <span id="total">$0.00</span></p>
+  <label class="agree"><input type="checkbox" id="agree"><span>I agree to the <a href="/terms.html" target="_blank" rel="noopener">Terms</a>, <a href="/refunds.html" target="_blank" rel="noopener">Refund Policy</a> and <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
   <p id="msg" role="alert"></p>
   <button class="btn" id="checkout" disabled>Check out</button>
 </aside>
@@ -90,7 +114,7 @@ function renderProducts() {
         <select aria-label="Options for ${esc(p.title)}">
           ${p.variants.map((v) => `<option value="${v.id}">${esc(v.title)} · ${money(v.price)}</option>`).join('')}
         </select>
-        <button class="btn">Add to cart</button>
+        <button class="btn" aria-label="Add to cart: ${esc(p.title)}">Add to cart</button>
       </div>`;
     el.querySelector('button').onclick = () => add(p.id, Number(el.querySelector('select').value));
     $('grid').append(el);
@@ -101,7 +125,7 @@ function add(productId, variantId) {
   const found = cart.find((i) => i.productId === productId && i.variantId === variantId);
   found ? found.quantity++ : cart.push({ productId, variantId, quantity: 1 });
   renderCart();
-  $('cart').classList.add('open');
+  openCart();
 }
 
 function lookup(i) {
@@ -114,8 +138,8 @@ function renderCart() {
   cart = cart.filter((i) => lookup(i) && i.quantity > 0);
   save();
   $('count').textContent = cart.reduce((n, i) => n + i.quantity, 0);
-  $('checkout').disabled = !cart.length;
-  $('lines').innerHTML = cart.length ? '' : '<p>Your cart is empty. Add an item to get started.</p>';
+  $('checkout').disabled = !cart.length || !$('agree').checked;
+  $('lines').innerHTML = cart.length ? '' : '<p class="note">Your cart is empty. Add a case to get started.</p>';
   let total = 0;
   cart.forEach((i) => {
     const { p, v } = lookup(i);
@@ -123,7 +147,7 @@ function renderCart() {
     const el = document.createElement('div');
     el.className = 'line';
     el.innerHTML = `<div>${esc(p.title)}<small>${esc(v.title)} · ${money(v.price)}</small></div>
-      <div class="row"><button class="link" aria-label="Remove one">−</button>${i.quantity}<button class="link" aria-label="Add one">+</button></div>`;
+      <div class="row" style="align-items:center"><button class="link" aria-label="Remove one">−</button>${i.quantity}<button class="link" aria-label="Add one">+</button></div>`;
     const [minus, plus] = el.querySelectorAll('button');
     minus.onclick = () => { i.quantity--; renderCart(); };
     plus.onclick = () => { i.quantity++; renderCart(); };
@@ -132,8 +156,13 @@ function renderCart() {
   $('total').textContent = money(total);
 }
 
-$('open-cart').onclick = () => $('cart').classList.add('open');
-$('close-cart').onclick = () => $('cart').classList.remove('open');
+let opener;
+function openCart() { opener = document.activeElement; $('cart').inert = false; $('cart').classList.add('open'); $('close-cart').focus(); }
+function closeCart() { $('cart').classList.remove('open'); $('cart').inert = true; opener?.focus(); }
+$('open-cart').onclick = openCart;
+$('close-cart').onclick = closeCart;
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('cart').classList.contains('open')) closeCart(); });
+$('agree').onchange = renderCart;
 
 $('checkout').onclick = async () => {
   $('msg').textContent = '';
@@ -156,7 +185,7 @@ $('checkout').onclick = async () => {
 fetch('/api/products')
   .then((r) => (r.ok ? r.json() : Promise.reject()))
   .then((data) => { products = data; renderProducts(); renderCart(); })
-  .catch(() => { $('grid').innerHTML = '<p>Products failed to load. Check your Printify token and shop ID, then refresh.</p>'; });
+  .catch(() => { $('grid').innerHTML = '<p>Products failed to load. Refresh the page or try again in a minute.</p>'; });
 </script>
 </body>
 </html>
