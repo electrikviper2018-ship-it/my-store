@@ -38,7 +38,39 @@ async function printify(path, options = {}) {
     },
   });
   if (!res.ok) throw new Error(`Printify ${res.status}: ${await res.text()}`);
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : {};
+}
+
+// Tell Printify a product is live on this site. Without this, Printify leaves
+// the product on "Publishing" forever.
+async function markPublished(productId, siteUrl) {
+  await printify(`/shops/${await getShopId()}/products/${productId}/publishing_succeeded.json`, {
+    method: 'POST',
+    body: JSON.stringify({ external: { id: productId, handle: `${siteUrl}/` } }),
+  });
+}
+
+// On startup: make sure Printify sends us publish notices, and finish any product already stuck.
+async function setupPrintify() {
+  const siteUrl = (SITE_URL && !SITE_URL.includes('localhost') ? SITE_URL : process.env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
+  if (!siteUrl || !PRINTIFY_TOKEN) return;
+  const shop = await getShopId();
+  const hookUrl = `${siteUrl}/printify-webhook`;
+  const hooks = await printify(`/shops/${shop}/webhooks.json`);
+  const list = Array.isArray(hooks) ? hooks : hooks.data || [];
+  if (!list.some((h) => h.topic === 'product:publish:started' && h.url === hookUrl)) {
+    await printify(`/shops/${shop}/webhooks.json`, {
+      method: 'POST',
+      body: JSON.stringify({ topic: 'product:publish:started', url: hookUrl }),
+    });
+    console.log('Registered Printify publish webhook:', hookUrl);
+  }
+  const { data = [] } = await printify(`/shops/${shop}/products.json?limit=50`);
+  for (const p of data.filter((x) => x.is_locked)) {
+    await markPublished(p.id, siteUrl);
+    console.log('Marked published:', p.id);
+  }
 }
 
 // Simple in-memory cache so every page view doesn't hit Printify.
@@ -111,6 +143,18 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 });
 
 app.use(express.json());
+// Printify calls this when you press Publish. We confirm the product exists in our shop, then reply "published".
+app.post('/printify-webhook', (req, res) => {
+  res.json({ received: true });
+  const id = req.body?.resource?.id;
+  if (req.body?.type !== 'product:publish:started' || !/^[a-f0-9]{24}$/i.test(id || '')) return;
+  (async () => {
+    await printify(`/shops/${await getShopId()}/products/${id}.json`); // throws if it isn't ours
+    await markPublished(id, base(req));
+    cache.at = 0; // show the product right away
+  })().catch((err) => console.error('Publish confirmation failed:', err.message));
+});
+
 const send = (file) => async (req, res, next) => {
   try { res.type('html').send(await page(file(req), req)); } catch (err) { next(err); }
 };
@@ -198,4 +242,7 @@ app.use(async (req, res) => {
 });
 app.use((err, _req, res, _next) => { console.error(err); res.status(500).send('Something went wrong. Please try again.'); });
 
-app.listen(PORT, () => console.log(`Store running at ${SITE_URL}`));
+app.listen(PORT, () => {
+  console.log(`Store running at ${SITE_URL}`);
+  setupPrintify().catch((err) => console.error('Printify setup failed:', err.message));
+});
