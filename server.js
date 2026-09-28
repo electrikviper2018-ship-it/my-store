@@ -7,6 +7,13 @@ const {
   SITE_URL = 'http://localhost:3000', SHIP_COUNTRIES = 'US', PORT = 3000,
 } = process.env;
 
+let shopId = PRINTIFY_SHOP_ID;
+// If no shop ID is set, use the first store on the Printify account.
+async function getShopId() {
+  if (!shopId) shopId = (await printify('/shops.json'))[0]?.id;
+  return shopId;
+}
+
 const stripe = new Stripe(STRIPE_SECRET_KEY);
 const app = express();
 
@@ -28,7 +35,7 @@ async function printify(path, options = {}) {
 let cache = { at: 0, data: [] };
 async function getProducts() {
   if (Date.now() - cache.at < 5 * 60 * 1000) return cache.data;
-  const { data } = await printify(`/shops/${PRINTIFY_SHOP_ID}/products.json?limit=50`);
+  const { data } = await printify(`/shops/${await getShopId()}/products.json?limit=50`);
   cache = {
     at: Date.now(),
     data: data
@@ -62,7 +69,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const [first, ...rest] = (ship.name || '').split(' ');
       const items = JSON.parse(session.metadata.cart);
 
-      await printify(`/shops/${PRINTIFY_SHOP_ID}/orders.json`, {
+      await printify(`/shops/${await getShopId()}/orders.json`, {
         method: 'POST',
         body: JSON.stringify({
           external_id: session.id,
@@ -102,6 +109,16 @@ app.get('/api/products', async (_req, res) => {
   } catch (err) {
     console.error(err);
     res.status(502).json({ error: 'Could not load products.' });
+  }
+});
+
+// Lists the stores on your Printify account (IDs and names only) to help with setup.
+app.get('/api/shops', async (_req, res) => {
+  try {
+    const shops = await printify('/shops.json');
+    res.json({ using: await getShopId(), shops: shops.map((x) => ({ id: x.id, title: x.title, channel: x.sales_channel })) });
+  } catch (err) {
+    res.status(502).json({ error: 'Could not load stores.' });
   }
 });
 
