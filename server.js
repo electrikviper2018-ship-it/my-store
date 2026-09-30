@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import Stripe from 'stripe';
+import { cutout } from './cutout.js';
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
@@ -76,7 +77,7 @@ async function setupPrintify() {
 // Simple in-memory cache so every page view doesn't hit Printify.
 let cache = { at: 0, data: [] };
 async function getProducts() {
-  if (Date.now() - cache.at < 5 * 60 * 1000) return cache.data;
+  if (Date.now() - cache.at < 2 * 60 * 1000) return cache.data;
   const { data } = await printify(`/shops/${await getShopId()}/products.json?limit=50`);
   cache = {
     at: Date.now(),
@@ -89,8 +90,9 @@ async function getProducts() {
         image: (p.images.find((i) => i.is_default) || p.images[0])?.src,
         variants: p.variants
           .filter((v) => v.is_enabled)
-          .map((v) => ({ id: v.id, title: v.title, price: v.price })), // price in cents
-      })),
+          .map((v) => ({ id: v.id, title: v.title, price: v.price, available: v.is_available !== false })), // price in cents
+      }))
+      .filter((p) => p.variants.length),
   };
   return cache.data;
 }
@@ -198,6 +200,28 @@ app.get('/api/products', async (_req, res) => {
   }
 });
 
+// Serves a product photo with its white background removed (falls back to the original in the browser if this fails).
+const cutCache = new Map();
+app.get('/api/cutout', async (req, res) => {
+  try {
+    const u = new URL(String(req.query.u || ''));
+    if (u.protocol !== 'https:' || !/(^|\.)printify\.com$/.test(u.hostname)) return res.status(400).end();
+    let png = cutCache.get(u.href);
+    if (!png) {
+      const r = await fetch(u, { signal: AbortSignal.timeout(10000) });
+      if (!r.ok) throw new Error(`Image ${r.status}`);
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length > 10e6) throw new Error('Image too large');
+      png = cutout(buf);
+      if (cutCache.size >= 80) cutCache.delete(cutCache.keys().next().value);
+      cutCache.set(u.href, png);
+    }
+    res.set('Cache-Control', 'public, max-age=86400').type('png').send(png);
+  } catch {
+    res.status(502).end();
+  }
+});
+
 // Prices are looked up server-side, so customers can't change them in the browser.
 app.post('/api/checkout', async (req, res) => {
   try {
@@ -209,6 +233,7 @@ app.post('/api/checkout', async (req, res) => {
       const product = products.find((p) => p.id === productId);
       const variant = product?.variants.find((v) => v.id === variantId);
       if (!variant) throw new Error('An item in your cart is no longer available.');
+      if (!variant.available) throw new Error(`${product.title} (${variant.title}) is out of stock. Remove it from your cart to continue.`);
       return {
         quantity: Math.min(Math.max(parseInt(quantity) || 1, 1), 10),
         price_data: {
@@ -224,6 +249,9 @@ app.post('/api/checkout', async (req, res) => {
       line_items: lineItems,
       shipping_address_collection: { allowed_countries: SHIP_COUNTRIES.split(',') },
       phone_number_collection: { enabled: true },
+      shipping_options: [{
+        shipping_rate_data: { type: 'fixed_amount', fixed_amount: { amount: 0, currency: 'usd' }, display_name: 'Free standard shipping' },
+      }],
       // Stripe metadata is limited to 500 characters per value, which fits small carts.
       metadata: { cart: JSON.stringify(cart.map((i) => ({ p: i.productId, v: i.variantId, q: i.quantity }))) },
       success_url: `${base(req)}/?order=success`,
