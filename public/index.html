@@ -92,6 +92,14 @@ header,main,footer,.ticker,.steps{position:relative;z-index:1}
 .steps h3::before{content:counter(s);display:block;font:900 clamp(3.5rem,8vw,5.5rem)/1 'Big Shoulders Display',sans-serif;color:transparent;-webkit-text-stroke:1px var(--accent)}
 .steps p{margin:0;color:var(--muted)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.announce{position:relative;z-index:1;background:var(--accent);color:var(--base);text-align:center;padding:.5rem 1rem;font-weight:600;font-size:.95rem}
+.pic{position:relative;aspect-ratio:1;background:radial-gradient(circle at 50% 45%,rgba(168,107,255,.22),transparent 65%),var(--base);border-radius:2px;display:grid;place-items:center}
+.pic img{width:100%;height:100%;object-fit:contain;padding:1rem;background:none;border-radius:0;filter:drop-shadow(0 16px 20px rgba(0,0,0,.55))}
+.soldout .pic img{opacity:.4}
+.badge{position:absolute;top:.6rem;left:.6rem;background:var(--base);border:1px solid var(--accent);color:var(--text);padding:.2rem .7rem;border-radius:999px;font-size:.85rem;font-weight:600}
+.stock{margin:0;color:var(--muted);font-size:.9rem}
+.line small.gone{color:#ff8a8a}
+.btn:disabled{cursor:not-allowed}
 </style>
 </style>
 </head>
@@ -99,6 +107,7 @@ header,main,footer,.ticker,.steps{position:relative;z-index:1}
 <a class="skip" href="#grid">Skip to products</a>
 <div id="progress" aria-hidden="true"></div>
 <div id="glow" aria-hidden="true"></div>
+<div class="announce">Free standard shipping on all cases</div>
 <header>
   <div class="logo">FERMO</div>
   <button class="cartbtn" id="open-cart">Cart (<span id="count">0</span>)</button>
@@ -109,7 +118,7 @@ header,main,footer,.ticker,.steps{position:relative;z-index:1}
   <h1 class="mark" aria-label="FERMO">FERMO</h1>
   <div class="hero-copy">
     <h2>Cases that hold on.</h2>
-    <p>Printed to order and shipped to your door.</p>
+    <p>Printed to order. Free standard shipping to your door.</p>
   </div>
 </section>
 <h2 class="sr-only">Shop phone cases</h2>
@@ -136,6 +145,7 @@ header,main,footer,.ticker,.steps{position:relative;z-index:1}
   </div>
   <div id="lines"></div>
   <p class="total">Subtotal: <span id="total">$0.00</span></p>
+  <p class="note">Free standard shipping on every order.</p>
   <label class="agree"><input type="checkbox" id="agree"><span>I agree to the <a href="/terms.html" target="_blank" rel="noopener">Terms</a>, <a href="/refunds.html" target="_blank" rel="noopener">Refund Policy</a> and <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
   <p id="msg" role="alert"></p>
   <button class="btn" id="checkout" disabled>Check out</button>
@@ -160,17 +170,22 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 function renderProducts() {
   $('grid').innerHTML = products.length ? '' : '<p>No products yet. Publish a product in Printify and refresh.</p>';
   products.forEach((p) => {
+    const first = p.variants.find((v) => v.available);
+    const out = p.variants.filter((v) => !v.available).length;
     const el = document.createElement('article');
-    el.className = 'item';
+    el.className = 'item' + (first ? '' : ' soldout');
     el.innerHTML = `
-      <img src="${esc(p.image || '')}" alt="${esc(p.title)}" loading="lazy">
+      <div class="pic"><img src="/api/cutout?u=${encodeURIComponent(p.image || '')}" alt="${esc(p.title)}" loading="lazy">${first ? '' : '<span class="badge">Out of stock</span>'}</div>
       <h3>${esc(p.title)}</h3>
       <div class="row">
-        <select aria-label="Options for ${esc(p.title)}">
-          ${p.variants.map((v) => `<option value="${v.id}">${esc(short(v.title))} · ${money(v.price)}</option>`).join('')}
+        <select aria-label="Options for ${esc(p.title)}" ${first ? '' : 'disabled'}>
+          ${p.variants.map((v) => `<option value="${v.id}" ${v.available ? '' : 'disabled'} ${first && v.id === first.id ? 'selected' : ''}>${esc(short(v.title))} · ${money(v.price)}${v.available ? '' : ' (out of stock)'}</option>`).join('')}
         </select>
-        <button class="btn" aria-label="Add to cart: ${esc(p.title)}">Add to cart</button>
-      </div>`;
+        <button class="btn" ${first ? '' : 'disabled'} aria-label="${first ? 'Add to cart: ' : 'Out of stock: '}${esc(p.title)}">${first ? 'Add to cart' : 'Out of stock'}</button>
+      </div>
+      ${first && out ? `<p class="stock">${out} ${out === 1 ? 'option is' : 'options are'} out of stock right now.</p>` : ''}`;
+    const img = el.querySelector('img');
+    img.onerror = () => { img.onerror = null; if (p.image) img.src = p.image; };
     el.querySelector('button').onclick = () => add(p.id, Number(el.querySelector('select').value));
     $('grid').append(el);
   });
@@ -194,7 +209,7 @@ function renderCart() {
   cart = cart.filter((i) => lookup(i) && i.quantity > 0);
   save();
   $('count').textContent = cart.reduce((n, i) => n + i.quantity, 0);
-  $('checkout').disabled = !cart.length || !$('agree').checked;
+  $('checkout').disabled = !cart.length || cart.some((i) => !lookup(i).v.available) || !$('agree').checked;
   $('lines').innerHTML = cart.length ? '' : '<p class="note">Your cart is empty. Add a case to get started.</p>';
   let total = 0;
   cart.forEach((i) => {
@@ -202,7 +217,7 @@ function renderCart() {
     total += v.price * i.quantity;
     const el = document.createElement('div');
     el.className = 'line';
-    el.innerHTML = `<div>${esc(p.title)}<small>${esc(short(v.title))} · ${money(v.price)}</small></div>
+    el.innerHTML = `<div>${esc(p.title)}<small>${esc(short(v.title))} · ${money(v.price)}</small>${v.available ? '' : '<small class="gone">Out of stock. Remove this item to check out.</small>'}</div>
       <div class="row" style="align-items:center"><button class="link" aria-label="Remove one">−</button>${i.quantity}<button class="link" aria-label="Add one">+</button></div>`;
     const [minus, plus] = el.querySelectorAll('button');
     minus.onclick = () => { i.quantity--; renderCart(); };
